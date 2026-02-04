@@ -1,12 +1,12 @@
 <p align="center">
-    <img src="https://raw.githubusercontent.com/ermradulsharma/omniLocate/main/art/omnilocate_banner.png" alt="OmniLocate Banner" width="100%">
+    <img src="art/omnilocate_banner.png" alt="OmniLocate Banner" width="100%">
 </p>
 
 # OmniLocate
 
 <p align="center">
     <a href="https://github.com/ermradulsharma/omniLocate/actions/workflows/run-tests.yml">
-        <img src="https://github.com/ermradulsharma/omniLocate/actions/workflows/run-tests.yml/badge.svg" alt="Build Status">
+        <img src="https://img.shields.io/github/actions/workflow/status/ermradulsharma/omniLocate/run-tests.yml?branch=main&style=flat-square" alt="Build Status">
     </a>
     <a href="https://packagist.org/packages/ermradulsharma/omnilocate">
         <img src="https://img.shields.io/packagist/dt/ermradulsharma/omnilocate.svg?style=flat-square" alt="Total Downloads">
