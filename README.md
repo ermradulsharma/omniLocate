@@ -5,9 +5,9 @@
 # OmniLocate
 
 <p align="center">
-    <a href="https://github.com/ermradulsharma/omnilocate/actions"><img src="https://img.shields.io/github/workflow/status/ermradulsharma/omnilocate/run-tests.svg?style=flat-square" alt="Build Status"></a>
+    <a href="https://github.com/ermradulsharma/omniLocate/actions"><img src="https://img.shields.io/github/actions/workflow/status/ermradulsharma/omniLocate/run-tests.yml?branch=main&style=flat-square" alt="Build Status"></a>
     <a href="https://packagist.org/packages/ermradulsharma/omnilocate"><img src="https://img.shields.io/packagist/dt/ermradulsharma/omnilocate.svg?style=flat-square" alt="Total Downloads"></a>
-    <a href="https://github.com/ermradulsharma/omnilocate/blob/master/LICENSE"><img src="https://img.shields.io/packagist/l/ermradulsharma/omnilocate.svg?style=flat-square" alt="License"></a>
+    <a href="https://github.com/ermradulsharma/omniLocate/blob/main/LICENSE"><img src="https://img.shields.io/packagist/l/ermradulsharma/omnilocate.svg?style=flat-square" alt="License"></a>
     <a href="https://php.net"><img src="https://img.shields.io/packagist/php-v/ermradulsharma/omnilocate.svg?style=flat-square" alt="PHP Version"></a>
 </p>
 
@@ -154,4 +154,4 @@ If you find this package useful, please consider supporting the developer:
 
 ## ⚖️ License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the MIT License. See [LICENSE](file:///d:/github/package/location/LICENSE) for more information.
