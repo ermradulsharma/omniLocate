@@ -1,13 +1,19 @@
 <p align="center">
-    <img src="art/omnilocate_banner.png" alt="OmniLocate Banner" width="100%">
+    <img src="https://raw.githubusercontent.com/ermradulsharma/omniLocate/main/art/omnilocate_banner.png" alt="OmniLocate Banner" width="100%">
 </p>
 
 # OmniLocate
 
 <p align="center">
-    <a href="https://github.com/ermradulsharma/omnilocate/actions"><img src="https://img.shields.io/github/workflow/status/ermradulsharma/omnilocate/run-tests.svg?style=flat-square" alt="Build Status"></a>
-    <a href="https://packagist.org/packages/ermradulsharma/omnilocate"><img src="https://img.shields.io/packagist/dt/ermradulsharma/omnilocate.svg?style=flat-square" alt="Total Downloads"></a>
-    <a href="https://github.com/ermradulsharma/omnilocate/blob/master/LICENSE"><img src="https://img.shields.io/packagist/l/ermradulsharma/omnilocate.svg?style=flat-square" alt="License"></a>
+    <a href="https://github.com/ermradulsharma/omniLocate/actions/workflows/run-tests.yml">
+        <img src="https://github.com/ermradulsharma/omniLocate/actions/workflows/run-tests.yml/badge.svg" alt="Build Status">
+    </a>
+    <a href="https://packagist.org/packages/ermradulsharma/omnilocate">
+        <img src="https://img.shields.io/packagist/dt/ermradulsharma/omnilocate.svg?style=flat-square" alt="Total Downloads">
+    </a>
+    <a href="https://github.com/ermradulsharma/omniLocate/blob/main/LICENSE">
+        <img src="https://img.shields.io/packagist/l/ermradulsharma/omnilocate.svg?style=flat-square" alt="License">
+    </a>
 </p>
 
 **OmniLocate** is a premium, high-performance user location detection package for Laravel. It provides a robust, developer-friendly API for identifying visitor details via IP address, featuring advanced caching, multi-driver support with intelligent fallbacks, and seamless integration with CDNs like Cloudflare and Akamai.
