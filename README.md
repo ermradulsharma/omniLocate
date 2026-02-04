@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="art/omnilocate_banner.png" alt="OmniLocate Banner" width="100%" height="500px">
+    <img src="art/omnilocate_banner.png" alt="OmniLocate Banner" width="100%" height="auto">
 </p>
 
 # OmniLocate
@@ -8,6 +8,7 @@
     <a href="https://github.com/ermradulsharma/omnilocate/actions"><img src="https://img.shields.io/github/workflow/status/ermradulsharma/omnilocate/run-tests.svg?style=flat-square" alt="Build Status"></a>
     <a href="https://packagist.org/packages/ermradulsharma/omnilocate"><img src="https://img.shields.io/packagist/dt/ermradulsharma/omnilocate.svg?style=flat-square" alt="Total Downloads"></a>
     <a href="https://github.com/ermradulsharma/omnilocate/blob/master/LICENSE"><img src="https://img.shields.io/packagist/l/ermradulsharma/omnilocate.svg?style=flat-square" alt="License"></a>
+    <a href="https://php.net"><img src="https://img.shields.io/packagist/php-v/ermradulsharma/omnilocate.svg?style=flat-square" alt="PHP Version"></a>
 </p>
 
 **OmniLocate** is a premium, high-performance user location detection package for Laravel. It provides a robust, developer-friendly API for identifying visitor details via IP address, featuring advanced caching, multi-driver support with intelligent fallbacks, and seamless integration with CDNs like Cloudflare and Akamai.
@@ -22,6 +23,7 @@
 - **📏 Geo-Utilities**: Built-in distance calculation between any two detected points.
 - **🤖 Bot Filtering**: Automatically skips detection for major search engine bots.
 - **🧩 Fluent API**: Elegant, human-readable syntax for all operations.
+- **🎨 Blade Integration**: Simple directives to display location data directly in your templates.
 
 ---
 
@@ -43,7 +45,7 @@ Publish the configuration file to customize your drivers and settings:
 php artisan vendor:publish --provider="Ermradulsharma\OmniLocate\LocationServiceProvider"
 ```
 
-This creates `config/location.php`.
+This creates `config/location.php` (or `config/config.php` depending on your setup).
 
 ---
 
@@ -100,13 +102,15 @@ Your Flag: @location('flag')
 
 ### Distance Utilities
 
+Calculate the distance in Kilometers between two locations:
+
 ```php
-$distance = $position->distanceTo($otherPosition); // Distance in KM
+$distance = $position->distanceTo($otherPosition);
 ```
 
 ### Validation Rules
 
-Ensure users are from a specific location:
+Ensure users are from a specific location using Laravel's validation:
 
 ```php
 $request->validate([
@@ -118,12 +122,24 @@ $request->validate([
 
 ## 📦 Supported Drivers
 
-- **HttpHeader** (CDN Headers - Default)
-- **IpApi** (Free/Pro)
-- **IpData**
-- **IpInfo**
-- **GeoPlugin**
-- **MaxMind** (Local and Web Service)
+OmniLocate supports a variety of drivers out of the box:
+
+- **HttpHeader**: (Default) Detects location via CDN headers like `CF-IPCountry`.
+- **IpApi**: Free and Pro IP-API service.
+- **IpData**: Powerful IP Intelligence API.
+- **IpInfo**: Detailed IP address data.
+- **GeoPlugin**: Simple and effective geolocation service.
+- **MaxMind**: Local database and web service support.
+
+---
+
+## 🧪 Testing
+
+Run the test suite using PHPUnit:
+
+```bash
+vendor/bin/phpunit
+```
 
 ---
 
