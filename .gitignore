@@ -1,0 +1,9 @@
+/vendor/
+/.phpunit.result.cache
+/tests/ReproductionTest.php
+/check_methods.php
+/test_*.txt
+.env
+.idea/
+.vscode/
+*.log
