@@ -1,9 +1,37 @@
-/vendor/
-/.phpunit.result.cache
-/tests/ReproductionTest.php
-/check_methods.php
-/test_*.txt
+# Essentials
 .env
-.idea/
-.vscode/
+.env.backup
+.env.phpunit
+/vendor
+/node_modules
+composer.lock
+package-lock.json
+yarn.lock
+
+# Testing & Build
+/build
+/coverage
+.phpunit.result.cache
+.phpunit.cache
+
+# IDEs & Editors
+/.idea
+/.vscode
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+
+# System
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
 *.log
+npm-debug.log*
+yarn-error.log*

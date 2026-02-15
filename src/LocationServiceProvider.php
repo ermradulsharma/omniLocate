@@ -2,6 +2,7 @@
 
 namespace Skywalker\Location;
 
+use Illuminate\Support\Str;
 use Skywalker\Support\Providers\PackageServiceProvider;
 
 class LocationServiceProvider extends PackageServiceProvider
