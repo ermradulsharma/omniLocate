@@ -1,19 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Skywalker\Location;
 
-use Illuminate\Support\Str;
+use Skywalker\Location\Commands\UpdateMaxMindDatabase;
+use Skywalker\Location\Facades\Location as LocationFacade;
+use Skywalker\Location\Rules\LocationRule;
 use Skywalker\Support\Providers\PackageServiceProvider;
 
 class LocationServiceProvider extends PackageServiceProvider
 {
-    /**
-     * Vendor name.
-     *
-     * @var string
-     */
-    protected $vendor = 'skywalker-labs';
-
     /**
      * Package name.
      *
@@ -28,17 +25,14 @@ class LocationServiceProvider extends PackageServiceProvider
     {
         parent::boot();
 
-        if ($this->isLumen()) {
-            return;
+        if ($this->app->runningInConsole()) {
+            $this->publishAll();
         }
 
-        $this->publishAll();
-
-        if ($this->app['config']->get('location.dashboard.enabled', true)) {
-            $this->loadRoutesFrom(__DIR__ . DIRECTORY_SEPARATOR . 'routes.php');
+        if (config('location.dashboard.enabled', true)) {
+            $this->loadRoutesFrom(__DIR__.'/routes.php');
         }
 
-        $this->loadViews();
         $this->registerValidationRules();
     }
 
@@ -55,7 +49,9 @@ class LocationServiceProvider extends PackageServiceProvider
             return new Location($app['config']);
         });
 
-        $this->registerCommands([\Skywalker\Location\Commands\UpdateMaxMindDatabase::class]);
+        $this->registerCommands([
+            UpdateMaxMindDatabase::class,
+        ]);
     }
 
     /**
@@ -63,19 +59,17 @@ class LocationServiceProvider extends PackageServiceProvider
      */
     protected function registerValidationRules(): void
     {
-        if (! $this->app->has('validator')) {
-            return;
-        }
-
-        $this->app['validator']->extend('location', function ($attribute, $value, $parameters) {
-            return (new \Skywalker\Location\Rules\LocationRule($parameters[0] ?? ''))->passes($attribute, $value);
+        /** @var \Illuminate\Validation\Factory $validator */
+        $validator = $this->app->make('validator');
+        $validator->extend('location', function ($attribute, $value, $parameters) {
+            return (new LocationRule($parameters[0] ?? ''))->passes($attribute, $value);
         });
     }
 
     /**
      * Get the services provided by the provider.
      *
-     * @return array
+     * @return array<int, string>
      */
     public function provides(): array
     {
@@ -89,24 +83,12 @@ class LocationServiceProvider extends PackageServiceProvider
     {
         parent::registerBladeDirectives();
 
-        if (! $this->app->has('blade.compiler')) {
-            return;
-        }
-
-        $this->app['blade.compiler']->directive('location', function ($expression) {
-            return "<?php if (\$position = \Skywalker\Location\Facades\Location::get()): ?>
+        /** @var \Illuminate\View\Compilers\BladeCompiler $blade */
+        $blade = $this->app->make('blade.compiler');
+        $blade->directive('location', function ($expression) {
+            return "<?php if ((\$position = \Skywalker\Location\Facades\Location::get()) instanceof \Skywalker\Location\DataTransferObjects\Position): ?>
                 <?php echo \$position->{$expression} ?? \$position; ?>
             <?php endif; ?>";
         });
-    }
-
-    /**
-     * Determine if the current application is Lumen.
-     *
-     * @return bool
-     */
-    protected function isLumen(): bool
-    {
-        return Str::contains($this->app->version(), 'Lumen');
     }
 }

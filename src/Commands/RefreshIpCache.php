@@ -29,6 +29,8 @@ class RefreshIpCache extends Command
     public function handle(): int
     {
         $ip = $this->argument('ip');
+        $ip = is_array($ip) ? ($ip[0] ?? null) : $ip;
+        $ip = $ip ? (string) $ip : null;
 
         if ($ip) {
             $this->info("Refreshing cache for IP: $ip");
@@ -44,10 +46,14 @@ class RefreshIpCache extends Command
             $this->info('Refreshing cache for recent IPs from analytics...');
 
             if (class_exists(\Skywalker\Location\Models\GeoAnalytics::class)) {
-                \Skywalker\Location\Models\GeoAnalytics::latest()->take(100)->pluck('ip')->unique()->each(function ($ip) {
-                    $key = "location.$ip";
+                \Skywalker\Location\Models\GeoAnalytics::latest()->limit(100)->pluck('ip')->unique()->each(function (mixed $ip) {
+                    $ipString = is_string($ip) || is_numeric($ip) ? (string) $ip : '';
+                    if ($ipString === '') {
+                        return;
+                    }
+                    $key = "location.$ipString";
                     cache()->forget($key);
-                    Location::get($ip);
+                    Location::get($ipString);
                     $this->output->write('.');
                 });
             }

@@ -1,10 +1,10 @@
 <?php
 
-namespace Skywalker\Location\Middleware;
+namespace Skywalker\Location\Http\Middleware;
 
 use Closure;
 use Skywalker\Location\Facades\Location;
-use Skywalker\Support\Http\Concerns\ApiResponse;
+use Skywalker\Location\Support\Concerns\ApiResponse;
 
 class BotVerifier
 {
@@ -31,11 +31,12 @@ class BotVerifier
         // For now, I'll assume I made isBot public or I'll implement a helper here.
 
         $isClaimedBot = false;
-        $agent = strtolower($request->userAgent());
-        $bots = config('location.bots.list', []);
+        $agent = strtolower((string) ($request->userAgent() ?? ''));
+        $configBots = config('location.bots.list');
+        $bots = is_array($configBots) ? $configBots : [];
 
         foreach ($bots as $bot) {
-            if (str_contains($agent, strtolower($bot))) {
+            if (is_string($bot) && str_contains($agent, strtolower($bot))) {
                 $isClaimedBot = true;
                 break;
             }
@@ -50,18 +51,12 @@ class BotVerifier
             // But if isVerifiedBot returns false because it's a bot we don't have trusted domains for?
             // We should only block if it claims to be one of the verify-able bots.
 
-            $verifiableBots = array_keys(config('location.bots.trusted_domains', [
-                'googlebot' => [],
-                'bingbot' => [],
-                'slurp' => [],
-                'duckduckbot' => [],
-                'yandexbot' => [],
-                'baiduspider' => []
-            ]));
+            $trustedDomains = config('location.bots.trusted_domains');
+            $verifiableBots = array_keys(is_array($trustedDomains) ? $trustedDomains : []);
 
             $needsVerification = false;
             foreach ($verifiableBots as $vBot) {
-                if (str_contains($agent, $vBot)) {
+                if (is_string($vBot) && str_contains($agent, $vBot)) {
                     $needsVerification = true;
                     break;
                 }

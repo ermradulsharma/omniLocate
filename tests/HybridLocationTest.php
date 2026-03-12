@@ -3,25 +3,28 @@
 namespace Skywalker\Location\Tests;
 
 use Mockery as m;
-use Skywalker\Location\Position;
+use Skywalker\Location\DataTransferObjects\Position;
 use Skywalker\Location\Facades\Location;
 use Skywalker\Location\Services\HybridVerifier;
 
 class HybridLocationTest extends TestCase
 {
-    protected function getEnvironmentSetUp($app)
+    protected function getEnvironmentSetUp($app): void
     {
-        $app['config']->set('app.key', 'base64:6Cu/ozj4gPtIjmXjr8EdVnGFNsdRqZfHfVjQkmTlg4Y=');
-        $app['config']->set('app.debug', true);
+        /** @var \Illuminate\Contracts\Config\Repository $config */
+        $config = $app['config'];
+
+        $config->set('app.key', 'base64:6Cu/ozj4gPtIjmXjr8EdVnGFNsdRqZfHfVjQkmTlg4Y=');
+        $config->set('app.debug', true);
     }
 
-    public function test_hybrid_verification_spoofed()
+    public function test_hybrid_verification_spoofed(): void
     {
         // Mock Location::get('1.2.3.4') to return New York
         $ny = new Position();
         $ny->cityName = 'New York';
-        $ny->latitude = 40.7128;
-        $ny->longitude = -74.0060;
+        $ny->latitude = (string) 40.7128;
+        $ny->longitude = (string) -74.0060;
         $ny->countryCode = 'US';
 
         Location::shouldReceive('get')->with('1.2.3.4')->andReturn($ny);
@@ -39,13 +42,13 @@ class HybridLocationTest extends TestCase
         $this->assertGreaterThan(5000, $result['distance_km']);
     }
 
-    public function test_hybrid_verification_valid()
+    public function test_hybrid_verification_valid(): void
     {
         // Mock Location::get('1.2.3.4') to return New York
         $ny = new Position();
         $ny->cityName = 'New York';
-        $ny->latitude = 40.7128;
-        $ny->longitude = -74.0060;
+        $ny->latitude = (string) 40.7128;
+        $ny->longitude = (string) -74.0060;
         $ny->countryCode = 'US';
 
         Location::shouldReceive('get')->with('1.2.3.4')->andReturn($ny);
@@ -63,11 +66,11 @@ class HybridLocationTest extends TestCase
         $this->assertLessThan(20, $result['distance_km']);
     }
 
-    public function test_verify_route()
+    public function test_verify_route(): void
     {
         $ny = new Position();
-        $ny->latitude = 40.7128;
-        $ny->longitude = -74.0060;
+        $ny->latitude = (string) 40.7128;
+        $ny->longitude = (string) -74.0060;
         $ny->countryCode = 'US';
 
         Location::shouldReceive('get')->with('1.2.3.4')->andReturn($ny);

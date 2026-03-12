@@ -1,50 +1,50 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Skywalker\Location\Drivers;
 
 use Exception;
 use GeoIp2\Database\Reader;
 use GeoIp2\WebService\Client;
 use Illuminate\Support\Fluent;
-use Skywalker\Location\Position;
+use Skywalker\Location\DataTransferObjects\Position;
 
 class MaxMind extends Driver
 {
     /**
      * {@inheritdoc}
      */
-    public function url($ip)
+    public function url(string $ip): string
     {
-        return;
+        return '';
     }
 
     /**
      * {@inheritdoc}
      */
-    protected function hydrate(Position $position, Fluent $location)
+    protected function hydrate(Position $position, Fluent $location): Position
     {
-        $position->countryName = $location->country;
-        $position->countryCode = $location->country_code;
-        $position->isoCode = $location->country_code;
-        $position->regionCode = $location->regionCode;
-        $position->regionName = $location->regionName;
-        $position->cityName = $location->city;
-        $position->postalCode = $location->postal;
-        $position->metroCode = $location->metro_code;
-        $position->timezone = $location->time_zone;
-        $position->latitude = $location->latitude;
-        $position->longitude = $location->longitude;
+        $position->countryName = $this->getString($location, 'country');
+        $position->countryCode = $this->getString($location, 'country_code');
+        $position->isoCode = $this->getString($location, 'country_code');
+        $position->regionCode = $this->getString($location, 'regionCode');
+        $position->regionName = $this->getString($location, 'regionName');
+        $position->cityName = $this->getString($location, 'city');
+        $position->postalCode = $this->getString($location, 'postal');
+        $position->metroCode = $this->getString($location, 'metro_code');
+        $position->timezone = $this->getString($location, 'timezone') ?? $this->getString($location, 'time_zone');
+        $position->latitude = $this->getString($location, 'latitude');
+        $position->longitude = $this->getString($location, 'longitude');
 
-        $position->isProxy = $location->isProxy;
-        // MaxMind basic doesn't fully distinguish VPN vs Proxy easily without Enterprise, 
-        // but isAnonymousProxy is a good start. isVpn might need a different source or heuristics.
-        $position->isVpn = $location->isVpn;
-        $position->isTor = $location->isTorExitNode;
-        $position->isHosting = $location->isHostingProvider;
-        $position->isp = $location->isp;
-        $position->org = $location->organization;
-        $position->asn = $location->asn;
-        $position->connectionType = $location->connectionType;
+        $position->isProxy = $this->getBool($location, 'isProxy');
+        $position->isVpn = $this->getBool($location, 'isVpn');
+        $position->isTor = $this->getBool($location, 'isTorExitNode');
+        $position->isHosting = $this->getBool($location, 'isHostingProvider');
+        $position->isp = $this->getString($location, 'isp');
+        $position->org = $this->getString($location, 'organization');
+        $position->asn = $this->getString($location, 'asn');
+        $position->connectionType = $this->getString($location, 'connectionType') ?? 'Unknown';
 
         return $position;
     }
@@ -52,12 +52,10 @@ class MaxMind extends Driver
     /**
      * {@inheritdoc}
      */
-    protected function process($ip)
+    protected function process(string $ip)
     {
         try {
             $record = $this->fetchLocation($ip);
-
-            // Safer access to optional properties using object access or existence check
             $traits = $record->traits;
 
             return new Fluent([
@@ -74,13 +72,13 @@ class MaxMind extends Driver
 
                 // IP Intelligence
                 'isProxy' => $traits->isAnonymousProxy ?? false,
-                'isVpn' => $traits->isAnonymousVpn ?? false, // Often requires Enterprise/Insights
+                'isVpn' => $traits->isAnonymousVpn ?? false,
                 'isTorExitNode' => $traits->isTorExitNode ?? false,
-                'isHostingProvider' => $traits->isHostingProvider ?? false, // Often requires Enterprise/Insights
+                'isHostingProvider' => $traits->isHostingProvider ?? false,
                 'isp' => $traits->isp ?? null,
                 'organization' => $traits->organization ?? null,
                 'asn' => $traits->autonomousSystemNumber ?? null,
-                'connectionType' => $traits->connectionType ?? null, // e.g. 'Cable/DSL', 'Corporate', 'Cellular'
+                'connectionType' => $traits->connectionType ?? null,
             ]);
         } catch (Exception $e) {
             return false;
@@ -90,13 +88,9 @@ class MaxMind extends Driver
     /**
      * Attempt to fetch the location model from Maxmind.
      *
-     * @param string $ip
-     *
-     * @return \GeoIp2\Model\City
-     *
-     * @throws \Exception
+     * @throws Exception
      */
-    protected function fetchLocation($ip)
+    protected function fetchLocation(string $ip): \GeoIp2\Model\City
     {
         $maxmind = $this->isWebServiceEnabled()
             ? $this->newClient($this->getUserId(), $this->getLicenseKey(), $this->getOptions())
@@ -107,79 +101,77 @@ class MaxMind extends Driver
 
     /**
      * Returns a new MaxMind web service client.
-     *
-     * @param string $userId
-     * @param string $licenseKey
-     * @param array  $options
-     *
-     * @return Client
      */
-    protected function newClient($userId, $licenseKey, array $options = [])
+    /**
+     * Returns a new MaxMind web service client.
+     *
+     * @param  array<string, mixed>  $options
+     */
+    protected function newClient(int $userId, string $licenseKey, array $options = []): Client
     {
-        return new Client($userId, $licenseKey, $options);
+        /** @var array<int, string> $locales */
+        $locales = ['en'];
+
+        return new Client($userId, $licenseKey, $locales, $options);
     }
 
     /**
      * Returns a new MaxMind reader client with
      * the specified database file path.
-     *
-     * @param string $path
-     *
-     * @return \GeoIp2\Database\Reader
      */
-    protected function newReader($path)
+    protected function newReader(string $path): Reader
     {
         return new Reader($path);
     }
 
     /**
      * Returns true / false if the MaxMind web service is enabled.
-     *
-     * @return mixed
      */
-    protected function isWebServiceEnabled()
+    protected function isWebServiceEnabled(): bool
     {
-        return config('location.maxmind.web.enabled', false);
+        return (bool) config('location.maxmind.web.enabled', false);
     }
 
     /**
      * Returns the configured MaxMind web user ID.
-     *
-     * @return string
      */
-    protected function getUserId()
+    protected function getUserId(): int
     {
-        return config('location.maxmind.web.user_id');
+        $config = config('location.maxmind.web.user_id');
+
+        return is_numeric($config) ? (int) $config : 0;
     }
 
     /**
      * Returns the configured MaxMind web license key.
-     *
-     * @return string
      */
-    protected function getLicenseKey()
+    protected function getLicenseKey(): string
     {
-        return config('location.maxmind.web.license_key');
+        $config = config('location.maxmind.web.license_key');
+
+        return is_string($config) ? $config : '';
     }
 
     /**
      * Returns the configured MaxMind web option array.
      *
-     * @return array
+     * @return array<string, mixed>
      */
-    protected function getOptions()
+    protected function getOptions(): array
     {
-        return config('location.maxmind.web.options', []);
+        $config = config('location.maxmind.web.options', []);
+
+        return is_array($config) ? $config : [];
     }
 
     /**
      * Returns the MaxMind database file path.
-     *
-     * @return string
      */
-    protected function getDatabasePath()
+    protected function getDatabasePath(): string
     {
-        return config('location.maxmind.local.path', database_path('maxmind/GeoLite2-City.mmdb'));
+        $config = config('location.maxmind.local.path');
+
+        return is_string($config) ? $config : database_path('maxmind/GeoLite2-City.mmdb');
     }
 }
 

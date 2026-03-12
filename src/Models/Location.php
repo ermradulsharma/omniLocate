@@ -9,14 +9,14 @@ class Location extends Model
     /**
      * The attributes that aren't mass assignable.
      *
-     * @var array
+     * @var array<int, string>
      */
     protected $guarded = [];
 
     /**
      * The attributes that should be cast.
      *
-     * @var array
+     * @var array<string, string>
      */
     protected $casts = [
         'latitude' => 'float',
@@ -26,11 +26,10 @@ class Location extends Model
     /**
      * Get the parent authenticatable model.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\MorphTo
+     * @return \Illuminate\Database\Eloquent\Relations\MorphTo<\Illuminate\Database\Eloquent\Model, $this>
      */
     public function authenticatable()
     {
         return $this->morphTo();
     }
 }
-

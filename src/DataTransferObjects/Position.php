@@ -1,224 +1,167 @@
 <?php
 
-namespace Skywalker\Location;
+declare(strict_types=1);
 
-use Illuminate\Contracts\Support\Arrayable;
+namespace Skywalker\Location\DataTransferObjects;
 
-class Position implements Arrayable
+use Skywalker\Support\Foundation\Dto;
+
+class Position extends Dto
 {
     /**
      * The IP address used to retrieve the location.
-     *
-     * @var string
      */
-    public $ip;
+    public ?string $ip = null;
 
     /**
      * The country name.
-     *
-     * @var string|null
      */
-    public $countryName;
+    public ?string $countryName = null;
 
     /**
      * The country code.
-     *
-     * @var string|null
      */
-    public $countryCode;
+    public ?string $countryCode = null;
 
     /**
      * The region code.
-     *
-     * @var string|null
      */
-    public $regionCode;
+    public ?string $regionCode = null;
 
     /**
      * The region name.
-     *
-     * @var string|null
      */
-    public $regionName;
+    public ?string $regionName = null;
 
     /**
      * The city name.
-     *
-     * @var string|null
      */
-    public $cityName;
+    public ?string $cityName = null;
 
     /**
      * The zip code.
-     *
-     * @var string|null
      */
-    public $zipCode;
+    public ?string $zipCode = null;
 
     /**
      * The iso code.
-     *
-     * @var string|null
      */
-    public $isoCode;
+    public ?string $isoCode = null;
 
     /**
      * The postal code.
-     *
-     * @var string|null
      */
-    public $postalCode;
+    public ?string $postalCode = null;
 
     /**
      * The latitude.
-     *
-     * @var string|null
      */
-    public $latitude;
+    public ?string $latitude = null;
 
     /**
      * The longitude.
-     *
-     * @var string|null
      */
-    public $longitude;
+    public ?string $longitude = null;
 
     /**
      * The metro code.
-     *
-     * @var string|null
      */
-    public $metroCode;
+    public ?string $metroCode = null;
 
     /**
      * The area code.
-     *
-     * @var string|null
      */
-    public $areaCode;
+    public ?string $areaCode = null;
 
     /**
      * The timezone.
-     *
-     * @var string|null
      */
-    public $timezone;
+    public ?string $timezone = null;
 
     /**
      * The currency code.
-     *
-     * @var string|null
      */
-    public $currencyCode;
+    public ?string $currencyCode = null;
 
     /**
      * The driver used for retrieving the location.
-     *
-     * @var string|null
      */
-    public $driver;
+    public ?string $driver = null;
 
     /**
      * True if IP is a proxy.
-     *
-     * @var bool|null
      */
-    public $isProxy;
+    public ?bool $isProxy = null;
 
     /**
      * True if IP is a VPN.
-     *
-     * @var bool|null
      */
-    public $isVpn;
+    public ?bool $isVpn = null;
 
     /**
      * True if IP is a Tor exit node.
-     *
-     * @var bool|null
      */
-    public $isTor;
+    public ?bool $isTor = null;
 
     /**
      * True if IP belongs to a hosting provider.
-     *
-     * @var bool|null
      */
-    public $isHosting;
+    public ?bool $isHosting = null;
 
     /**
      * The Geo risk score (0-100).
-     *
-     * @var int|null
      */
-    public $geoRiskScore;
+    public ?int $geoRiskScore = null;
 
     /**
      * The ISP name.
-     *
-     * @var string|null
      */
-    public $isp;
+    public ?string $isp = null;
 
     /**
      * The Autonomous System Number.
-     *
-     * @var string|null
      */
-    public $asn;
+    public ?string $asn = null;
 
     /**
      * The Organization or Network Owner.
-     *
-     * @var string|null
      */
-    public $org;
+    public ?string $org = null;
 
     /**
      * The connection type (e.g., specific, corporate, mobile).
-     *
-     * @var string|null
      */
-    public $connectionType;
+    public ?string $connectionType = null;
 
     /**
      * The Language code.
-     *
-     * @var string|null
      */
-    public $language;
+    public ?string $language = null;
 
     /**
      * Determine if the position is empty.
-     *
-     * @return bool
      */
-    public function isEmpty()
+    public function isEmpty(): bool
     {
         $data = $this->toArray();
 
-        unset($data['ip']);
-        unset($data['driver']);
+        unset($data['ip'], $data['driver']);
 
         return empty(array_filter($data));
     }
 
     /**
      * Get the distance to another position.
-     *
-     * @param  Position  $other
-     * @param  string  $unit
-     * @return float|null
      */
-    public function distanceTo(Position $other, $unit = 'km')
+    public function distanceTo(self $other, string $unit = 'km'): ?float
     {
         if (! $this->latitude || ! $this->longitude || ! $other->latitude || ! $other->longitude) {
             return null;
         }
 
-        $theta = $this->longitude - $other->longitude;
+        $theta = (float) $this->longitude - (float) $other->longitude;
 
-        $dist = sin(deg2rad($this->latitude)) * sin(deg2rad($other->latitude)) + cos(deg2rad($this->latitude)) * cos(deg2rad($other->latitude)) * cos(deg2rad($theta));
+        $dist = sin(deg2rad((float) $this->latitude)) * sin(deg2rad((float) $other->latitude)) + cos(deg2rad((float) $this->latitude)) * cos(deg2rad((float) $other->latitude)) * cos(deg2rad($theta));
 
         $dist = acos($dist);
         $dist = rad2deg($dist);
@@ -234,28 +177,15 @@ class Position implements Arrayable
     }
 
     /**
-     * Get the instance as an array.
-     *
-     * @return array
-     */
-    public function toArray()
-    {
-        return get_object_vars($this);
-    }
-
-    /**
      * Get the country flag emoji.
-     *
-     * @return string|null
      */
-    public function flag()
+    public function flag(): ?string
     {
         if (! $this->countryCode || strlen($this->countryCode) !== 2) {
             return null;
         }
 
         $code = strtoupper($this->countryCode);
-
         $flag = '';
 
         foreach (str_split($code) as $char) {
@@ -265,4 +195,3 @@ class Position implements Arrayable
         return $flag;
     }
 }
-

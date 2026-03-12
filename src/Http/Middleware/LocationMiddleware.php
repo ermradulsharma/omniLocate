@@ -1,6 +1,6 @@
 <?php
 
-namespace Skywalker\Location\Middleware;
+namespace Skywalker\Location\Http\Middleware;
 
 use Closure;
 use Skywalker\Location\Facades\Location;

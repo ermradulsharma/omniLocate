@@ -5,7 +5,7 @@ namespace Skywalker\Location\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Skywalker\Location\Services\HybridVerifier;
-use Skywalker\Support\Http\Concerns\ApiResponse;
+use Skywalker\Location\Support\Concerns\ApiResponse;
 
 class HybridLocationController extends Controller
 {
@@ -22,24 +22,31 @@ class HybridLocationController extends Controller
         $request->validate([
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
+            'ip' => 'nullable|ip',
         ]);
 
-        $ip = $request->ip();
-
-        // Allow passing IP for testing purposes if configured (careful with security)
-        if (config('app.debug') && $request->has('test_ip')) {
-            $ip = $request->input('test_ip');
+        $ip = (string) $request->ip();
+        // Allow passing IP for testing purposes IF in debug mode AND (from a local IP OR in testing environment)
+        if (config('app.debug') && (app()->environment('testing') || $ip === '127.0.0.1' || $ip === '::1')) {
+            $testIp = $request->input('test_ip');
+            if (is_string($testIp)) {
+                $ip = $testIp;
+            }
         }
 
-        $result = $verifier->verify(
-            $ip,
-            $request->input('latitude'),
-            $request->input('longitude')
+        $latitude = $request->input('latitude');
+        $longitude = $request->input('longitude');
+
+        return $this->apiSuccess(
+            $verifier->verify(
+                $ip,
+                is_numeric($latitude) ? (float) $latitude : 0.0,
+                is_numeric($longitude) ? (float) $longitude : 0.0
+            ),
+            'Location verified successfully'
         );
 
         // Log to analytics if blocked/spoofed? 
         // Logic could be added here or via middleware.
-
-        return $this->apiSuccess($result, 'Location verification completed');
     }
 }

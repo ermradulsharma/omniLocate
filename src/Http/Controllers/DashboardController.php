@@ -5,7 +5,7 @@ namespace Skywalker\Location\Http\Controllers;
 use Illuminate\Routing\Controller;
 use Skywalker\Location\Models\GeoAnalytics;
 use Illuminate\Support\Facades\DB;
-use Skywalker\Support\Http\Concerns\ApiResponse;
+use Skywalker\Location\Support\Concerns\ApiResponse;
 
 class DashboardController extends Controller
 {
@@ -13,7 +13,7 @@ class DashboardController extends Controller
     /**
      * Show the dashboard view.
      *
-     * @return \Illuminate\View\View
+     * @return \Illuminate\Contracts\View\View
      */
     public function index()
     {
@@ -46,7 +46,7 @@ class DashboardController extends Controller
         $highRisk = GeoAnalytics::where('risk_score', '>=', 70)->count();
 
         // 5. Recent Logs
-        $logs = GeoAnalytics::latest()->limit(10)->get();
+        $logs = GeoAnalytics::query()->latest()->limit(10)->get();
 
         return $this->apiSuccess([
             'total_requests' => $total,

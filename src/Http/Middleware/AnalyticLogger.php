@@ -1,6 +1,6 @@
 <?php
 
-namespace Skywalker\Location\Middleware;
+namespace Skywalker\Location\Http\Middleware;
 
 use Closure;
 use Skywalker\Location\Facades\Location;
@@ -24,7 +24,7 @@ class AnalyticLogger
         try {
             $position = Location::get();
 
-            if ($position) {
+            if ($position instanceof \Skywalker\Location\DataTransferObjects\Position) {
                 GeoAnalytics::create([
                     'ip' => $position->ip,
                     'country_code' => $position->countryCode,

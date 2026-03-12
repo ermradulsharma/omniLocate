@@ -1,10 +1,10 @@
 <?php
 
-namespace Skywalker\Location\Middleware;
+namespace Skywalker\Location\Http\Middleware;
 
 use Closure;
 use Skywalker\Location\Facades\Location;
-use Skywalker\Support\Http\Concerns\ApiResponse;
+use Skywalker\Location\Support\Concerns\ApiResponse;
 
 class GeoRiskGuard
 {
@@ -21,8 +21,9 @@ class GeoRiskGuard
     {
         $position = Location::get();
 
-        if ($position && $position->geoRiskScore !== null) {
+        if ($position instanceof \Skywalker\Location\DataTransferObjects\Position && $position->geoRiskScore !== null) {
             $threshold = $threshold ?: config('location.risk.threshold', 80);
+            $threshold = is_numeric($threshold) ? (int) $threshold : 80;
 
             if ($position->geoRiskScore >= $threshold) {
                 return $this->apiError('Access Denied: High Risk IP.', 403);

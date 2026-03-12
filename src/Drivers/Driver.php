@@ -1,28 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Skywalker\Location\Drivers;
 
 use Illuminate\Support\Fluent;
-use Skywalker\Location\Position;
+use Skywalker\Location\DataTransferObjects\Position;
 
 abstract class Driver
 {
-    const CURL_MAX_TIME = 2;
-    const CURL_CONNECT_TIMEOUT = 2;
+    public const CURL_MAX_TIME = 2;
+
+    public const CURL_CONNECT_TIMEOUT = 2;
 
     /**
      * The fallback driver.
-     *
-     * @var Driver
      */
-    protected $fallback;
+    protected ?Driver $fallback = null;
 
     /**
      * Append a fallback driver to the end of the chain.
-     *
-     * @param Driver $handler
      */
-    public function fallback(Driver $handler)
+    public function fallback(Driver $handler): void
     {
         if (is_null($this->fallback)) {
             $this->fallback = $handler;
@@ -34,12 +33,18 @@ abstract class Driver
     /**
      * Handle the driver request.
      *
-     * @param string $ip
-     *
      * @return Position|bool
      */
-    public function get($ip)
+    public function get(string $ip)
     {
+        // Security check: Ensure the IP is a valid public IP to prevent SSRF and internal lookups
+        if (! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            // Allow if it's explicitly for local testing and allowed in config
+            if (! config('location.testing.enabled', false)) {
+                return false;
+            }
+        }
+
         $data = $this->process($ip);
 
         $position = $this->getNewPosition();
@@ -63,12 +68,12 @@ abstract class Driver
 
     /**
      * Create a new position instance.
-     *
-     * @return Position
      */
-    protected function getNewPosition()
+    protected function getNewPosition(): Position
     {
-        $position = config('location.position', Position::class);
+        $config = config('location.position');
+        /** @var class-string<Position> $position */
+        $position = is_string($config) ? $config : \Skywalker\Location\DataTransferObjects\Position::class;
 
         return new $position;
     }
@@ -76,28 +81,62 @@ abstract class Driver
     /**
      * Determine if the given fluent data is not empty.
      *
-     * @param Fluent $data
-     *
-     * @return bool
+     * @param  Fluent<string, mixed>  $data
      */
-    protected function fluentDataIsNotEmpty(Fluent $data)
+    protected function fluentDataIsNotEmpty(Fluent $data): bool
     {
         return ! empty(array_filter($data->getAttributes()));
     }
 
     /**
+     * Get a string value from the fluent data.
+     *
+     * @param  Fluent<string, mixed>  $data
+     */
+    protected function getString(Fluent $data, string $key): ?string
+    {
+        $value = $data->get($key);
+
+        return is_string($value) || is_numeric($value) ? (string) $value : null;
+    }
+
+    /**
+     * Get a boolean value from the fluent data.
+     *
+     * @param  Fluent<string, mixed>  $data
+     */
+    protected function getBool(Fluent $data, string $key): ?bool
+    {
+        $value = $data->get($key);
+
+        return is_null($value) ? null : (bool) $value;
+    }
+
+    /**
+     * Get an array value from the fluent data.
+     *
+     * @param  Fluent<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function getArray(Fluent $data, string $key): array
+    {
+        $value = $data->get($key);
+
+        return is_array($value) ? $value : [];
+    }
+
+    /**
      * Get content from the given URL using cURL.
      *
-     * @param string $url
-     *
-     * @return mixed
+     * @return string|bool
      */
-    protected function getUrlContent($url)
+    protected function getUrlContent(string $url)
     {
         $session = curl_init();
 
         curl_setopt($session, CURLOPT_URL, $url);
         curl_setopt($session, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($session, CURLOPT_SSL_VERIFYPEER, true);
         curl_setopt($session, CURLOPT_TIMEOUT, static::CURL_MAX_TIME);
         curl_setopt($session, CURLOPT_CONNECTTIMEOUT, static::CURL_CONNECT_TIMEOUT);
 
@@ -110,30 +149,24 @@ abstract class Driver
 
     /**
      * Get the URL to use for querying the current driver.
-     *
-     * @param string $ip
-     *
-     * @return string
      */
-    abstract protected function url($ip);
+    abstract protected function url(string $ip): string;
 
     /**
      * Hydrate the Position object with the given location data.
      *
-     * @param Position $position
-     * @param Fluent   $location
-     *
-     * @return \Skywalker\Location\Position
+     * @param  Position  $position
+     * @param  Fluent<string, mixed>  $location
+     * @return Position
      */
-    abstract protected function hydrate(Position $position, Fluent $location);
+    abstract protected function hydrate(Position $position, Fluent $location): Position;
 
     /**
      * Attempt to fetch and process the location data from the driver.
      *
-     * @param string $ip
-     *
-     * @return Fluent|bool
+     * @param  string  $ip
+     * @return Fluent<string, mixed>|bool
      */
-    abstract protected function process($ip);
+    abstract protected function process(string $ip);
 }
 

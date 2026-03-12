@@ -21,6 +21,7 @@ yarn.lock
 *.swo
 *.sublime-workspace
 *.sublime-project
+*.txt
 
 # System
 .DS_Store

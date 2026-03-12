@@ -29,8 +29,10 @@ This section guides you through submitting an enhancement suggestion for OmniLoc
 ### Pull Requests
 
 - Fill in the pull request template (if available).
-- Ensure the test suite passes.
+- Ensure the test suite passes (`vendor/bin/phpunit`).
+- **Extreme Strictness**: All new code must pass **PHPStan Level 9** (`vendor/bin/phpstan analyse --level=9 src`).
 - Follow the PSR-12 coding standard.
+- Follow the **Action-oriented** architecture (logic in `Actions`, interfaces in `Services`).
 - Include documentation updates if necessary.
 
 ## Styleguide
@@ -39,9 +41,9 @@ This section guides you through submitting an enhancement suggestion for OmniLoc
 
 - Use the present tense ("Add feature" not "Added feature")
 - Use the imperative mood ("Move cursor to..." not "Moves cursor to...")
+- Use semantic commit prefixes if possible (e.g., `feat:`, `fix:`, `refactor:`)
 - Limit the first line to 72 characters or less
 
 ### PHP Styleguide
 
-All PHP code must follow the [PSR-12](https://www.php-fig.org/psr/psr-12/) coding standard. You can check the code style using PHP_CodeSniffer.
-
+All PHP code must follow the [PSR-12](https://www.php-fig.org/psr/psr-12/) coding standard. You can check the code style using PHP_CodeSniffer. We strictly enforce type safety and strict types.

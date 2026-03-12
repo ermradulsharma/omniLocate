@@ -4,13 +4,13 @@
     "type": "library",
     "license": "MIT",
     "keywords": [
+        "geo-location",
+        "geoIP",
         "laravel",
-        "php",
         "location",
         "omnilocate",
-        "geoIP",
-        "geo-location",
         "persistence",
+        "php",
         "skywalker"
     ],
     "homepage": "https://github.com/skywalker-labs/location",
@@ -27,28 +27,31 @@
     ],
     "authors": [
         {
-            "name": "Skywalker Labs Team",
-            "email": "skywalkerlknw@gmail.com",
-            "homepage": "https://skywalker-labs.com/",
-            "role": "Developer"
-        },
-        {
             "name": "Mradul Sharma",
             "email": "skywalkerlknw@gmail.com",
             "homepage": "https://mradulsharma.vercel.app/",
             "role": "Lead Developer"
+        },
+        {
+            "name": "Skywalker Labs Team",
+            "email": "skywalkerlknw@gmail.com",
+            "homepage": "https://skywalker-labs.com/",
+            "role": "Developer"
         }
     ],
     "require": {
-        "php": ">=7.0",
-        "ext-json": "*",
+        "php": "^7.4 || ^8.0",
         "ext-curl": "*",
-        "geoip2/geoip2": "^2.0|^3.0",
-        "skywalker-labs/toolkit": "^1.0|^2.0"
+        "ext-json": "*",
+        "geoip2/geoip2": "^2.10 || ^3.0",
+        "skywalker-labs/toolkit": "^1.6.0"
     },
     "require-dev": {
-        "mockery/mockery": "^1.0",
-        "orchestra/testbench": "^5.0|^6.0|^7.0|^8.0|^9.0|^10.0"
+        "laravel/pint": "^1.0",
+        "mockery/mockery": "^1.4.4",
+        "orchestra/testbench": "^6.0 || ^7.0 || ^8.0 || ^9.0 || ^10.0",
+        "phpstan/phpstan": "^1.10",
+        "phpunit/phpunit": "^9.5 || ^10.0 || ^11.0"
     },
     "autoload": {
         "psr-4": {
@@ -60,6 +63,14 @@
             "Skywalker\\Location\\Tests\\": "tests/"
         }
     },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true
+        },
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    },
     "extra": {
         "laravel": {
             "providers": [
@@ -70,11 +81,12 @@
             }
         }
     },
-    "archive": {
-        "exclude": [
-            "/tests"
-        ]
+    "scripts": {
+        "analyze": "vendor/bin/phpstan analyze",
+        "format": "vendor/bin/pint",
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
     },
     "minimum-stability": "stable",
     "prefer-stable": true
-}
+}

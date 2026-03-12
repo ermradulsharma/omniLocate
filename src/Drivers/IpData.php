@@ -1,20 +1,23 @@
 <?php
 
+declare(strict_types=1);
 
 namespace Skywalker\Location\Drivers;
 
 use Exception;
 use Illuminate\Support\Fluent;
-use Skywalker\Location\Position;
+use Skywalker\Location\DataTransferObjects\Position;
 
 class IpData extends Driver
 {
     /**
      * {@inheritdoc}
      */
-    protected function url($ip)
+    protected function url(string $ip): string
     {
-        $token = config('location.ipdata.token', '');
+        $config = config('location.ip_data.api_key');
+        $key = is_string($config) ? $config : '';
+        $token = $key; // Assuming $key should be used as $token based on the context of the change.
 
         return "https://api.ipdata.co/{$ip}?api-key={$token}";
     }
@@ -22,18 +25,20 @@ class IpData extends Driver
     /**
      * {@inheritdoc}
      */
-    protected function hydrate(Position $position, Fluent $location)
+    protected function hydrate(Position $position, Fluent $location): Position
     {
-        $position->countryName = $location->country_name;
-        $position->countryCode = $location->country_code;
-        $position->regionCode = $location->region_code;
-        $position->regionName = $location->region;
-        $position->cityName = $location->city;
-        $position->zipCode = $location->postal;
-        $position->postalCode = $location->postal;
-        $position->latitude = (string)$location->latitude;
-        $position->longitude = (string)$location->longitude;
-        $position->timezone = $location->time_zone['name'] ?? null;
+        $position->countryName = $this->getString($location, 'country_name');
+        $position->countryCode = $this->getString($location, 'country_code');
+        $position->regionCode = $this->getString($location, 'region_code');
+        $position->regionName = $this->getString($location, 'region');
+        $position->cityName = $this->getString($location, 'city');
+        $position->zipCode = $this->getString($location, 'postal');
+        $position->postalCode = $this->getString($location, 'postal');
+        $position->latitude = $this->getString($location, 'latitude');
+        $position->longitude = $this->getString($location, 'longitude');
+
+        $timezone = $this->getArray($location, 'time_zone');
+        $position->timezone = isset($timezone['name']) && (is_string($timezone['name']) || is_numeric($timezone['name'])) ? (string) $timezone['name'] : null;
 
         return $position;
     }
@@ -41,12 +46,13 @@ class IpData extends Driver
     /**
      * {@inheritdoc}
      */
-    protected function process($ip)
+    protected function process(string $ip)
     {
         try {
-            $response = json_decode($this->getUrlContent($this->url($ip)), true);
+            $content = $this->getUrlContent($this->url($ip));
+            $response = json_decode((string) $content, true);
 
-            return new Fluent($response);
+            return new Fluent(is_array($response) ? $response : []);
         } catch (Exception $e) {
             return false;
         }

@@ -48,7 +48,7 @@ return [
     |
     */
 
-    'position' => Skywalker\Location\Position::class,
+    'position' => Skywalker\Location\DataTransferObjects\Position::class,
 
     /*
     |--------------------------------------------------------------------------
@@ -288,7 +288,8 @@ return [
     |
     */
     'dashboard' => [
-        'enabled' => true,
+        'enabled' => env('LOCATION_DASHBOARD_ENABLED', true),
+        'middleware' => ['web'], // Add protection: ['web', 'auth']
     ],
 
 ];

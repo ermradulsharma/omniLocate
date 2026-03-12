@@ -8,15 +8,18 @@ use Illuminate\Database\Schema\Blueprint;
 
 class DashboardTest extends TestCase
 {
-    protected function getEnvironmentSetUp($app)
+    protected function getEnvironmentSetUp($app): void
     {
-        $app['config']->set('database.default', 'testbench');
-        $app['config']->set('database.connections.testbench', [
+        /** @var \Illuminate\Contracts\Config\Repository $config */
+        $config = $app['config'];
+
+        $config->set('database.default', 'testbench');
+        $config->set('database.connections.testbench', [
             'driver'   => 'sqlite',
             'database' => ':memory:',
             'prefix'   => '',
         ]);
-        $app['config']->set('app.key', 'base64:6Cu/ozj4gPtIjmXjr8EdVnGFNsdRqZfHfVjQkmTlg4Y=');
+        $config->set('app.key', 'base64:6Cu/ozj4gPtIjmXjr8EdVnGFNsdRqZfHfVjQkmTlg4Y=');
     }
 
     protected function setUp(): void
@@ -36,7 +39,9 @@ class DashboardTest extends TestCase
         });
     }
 
-    public function test_dashboard_stats_response()
+
+
+    public function test_dashboard_stats_response(): void
     {
         GeoAnalytics::create([
             'ip' => '1.1.1.1',

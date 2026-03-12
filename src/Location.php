@@ -1,31 +1,32 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Skywalker\Location;
 
 use Illuminate\Contracts\Config\Repository;
+use Skywalker\Location\DataTransferObjects\Position;
+use Skywalker\Location\Actions\HydratePosition;
+use Skywalker\Location\Actions\VerifyBot;
 use Skywalker\Location\Drivers\Driver;
+use Skywalker\Location\Events\LocationDetected;
 use Skywalker\Location\Exceptions\DriverDoesNotExistException;
+use Skywalker\Support\Foundation\Service;
 
-class Location
+class Location extends Service
 {
     /**
      * The current driver.
-     *
-     * @var Driver
      */
-    protected $driver;
+    protected Driver $driver;
 
     /**
      * The application configuration.
-     *
-     * @var Repository
      */
-    protected $config;
+    protected Repository $config;
 
     /**
      * Constructor.
-     *
-     * @param Repository $config
      *
      * @throws DriverDoesNotExistException
      */
@@ -38,10 +39,8 @@ class Location
 
     /**
      * Set the current driver to use.
-     *
-     * @param Driver $driver
      */
-    public function setDriver(Driver $driver)
+    public function setDriver(Driver $driver): void
     {
         $this->driver = $driver;
     }
@@ -51,7 +50,7 @@ class Location
      *
      * @throws DriverDoesNotExistException
      */
-    public function setDefaultDriver()
+    public function setDefaultDriver(): void
     {
         $driver = $this->getDriver($this->getDefaultDriver());
 
@@ -64,11 +63,8 @@ class Location
 
     /**
      * Add a fallback driver.
-     *
-     * @param Driver $driver
-     * @return void
      */
-    public function fallback(Driver $driver)
+    public function fallback(Driver $driver): void
     {
         $this->driver->fallback($driver);
     }
@@ -76,11 +72,9 @@ class Location
     /**
      * Attempt to retrieve the location of the user.
      *
-     * @param string|null $ip
-     *
-     * @return \Skywalker\Location\Position|bool
+     * @return Position|bool
      */
-    public function get($ip = null)
+    public function get(?string $ip = null)
     {
         if ($this->isBot()) {
             return false;
@@ -88,108 +82,34 @@ class Location
 
         $ip = $ip ?: $this->getClientIP();
 
-        $position = $this->cacheEnabled()
-            ? cache()->remember($this->getCacheKey($ip), $this->getCacheDuration(), function () use ($ip) {
-                return $this->driver->get($ip);
-            })
-            : $this->driver->get($ip);
+        /** @var Position|bool $position */
+        $position = $this->driver->get($ip);
 
-        if ($position) {
-            $this->hydrateAdvancedFeatures($position);
+        if ($position instanceof Position) {
+            $result = HydratePosition::run($position);
 
-            event(new Events\LocationDetected($position));
-
-            return $position;
+            return $result instanceof Position ? $result : false;
         }
 
         return false;
     }
 
     /**
-     * Hydrate advanced features on the position.
-     *
-     * @param Position $position
-     * @return void
-     */
-    protected function hydrateAdvancedFeatures(Position $position)
-    {
-        $position->currencyCode = $this->getCurrencyCode($position->countryCode);
-        $position->language = $this->getLanguageCode($position->countryCode);
-
-        // Simple heuristic for connection type if not provided by driver
-        if (!$position->connectionType && $position->ip) {
-            // This is very basic, a real implementation would need a database
-            $position->connectionType = 'Unknown';
-        }
-    }
-
-    /**
-     * Get the currency code for the given country code.
-     *
-     * @param string|null $countryCode
-     * @return string|null
-     */
-    protected function getCurrencyCode($countryCode)
-    {
-        $currencies = [
-            'US' => 'USD',
-            'IN' => 'INR',
-            'GB' => 'GBP',
-            'CA' => 'CAD',
-            'AU' => 'AUD',
-            'DE' => 'EUR',
-            'FR' => 'EUR',
-            'IT' => 'EUR',
-            'ES' => 'EUR',
-            'JP' => 'JPY',
-            'BR' => 'BRL',
-            'CN' => 'CNY',
-            'RU' => 'RUB',
-        ];
-
-        return $currencies[strtoupper($countryCode)] ?? null;
-    }
-
-    /**
-     * Get the language code for the given country code.
-     *
-     * @param string|null $countryCode
-     * @return string|null
-     */
-    protected function getLanguageCode($countryCode)
-    {
-        $languages = [
-            'US' => 'en',
-            'GB' => 'en',
-            'IN' => 'hi', // or en
-            'DE' => 'de',
-            'FR' => 'fr',
-            'ES' => 'es',
-            'IT' => 'it',
-            'JP' => 'ja',
-            'CN' => 'zh',
-            'RU' => 'ru',
-            'BR' => 'pt',
-        ];
-
-        return $languages[strtoupper($countryCode)] ?? null;
-    }
-
-    /**
      * Determine if the current user is a bot.
-     *
-     * @return bool
      */
-    protected function isBot()
+    public function isBot(): bool
     {
         if (! $this->config->get('location.bots.enabled', false)) {
             return false;
         }
 
-        $agent = request()->userAgent();
+        $agent = (string) request()->userAgent();
 
-        foreach ($this->config->get('location.bots.list', []) as $bot) {
-            if (str_contains(strtolower($agent), strtolower($bot))) {
+        $botsConfig = $this->config->get('location.bots.list');
+        $bots = is_array($botsConfig) ? $botsConfig : [];
+
+        foreach ($bots as $bot) {
+            if (str_contains(strtolower($agent), strtolower((string) $bot))) {
                 return true;
             }
         }
@@ -199,164 +119,124 @@ class Location
 
     /**
      * Determine if the current user is a VERIFIED bot (e.g., real Googlebot).
-     *
-     * @return bool
      */
-    public function isVerifiedBot()
+    public function isVerifiedBot(): bool
     {
-        if (!$this->isBot()) {
+        if (! $this->isBot()) {
             return false;
         }
 
-        $ip = request()->ip();
-        $agent = strtolower(request()->userAgent());
-
-        // Skip verification for local testing IPs if needed, or handle gracefully
-        if ($ip === '127.0.0.1' || $ip === '::1') {
-            return true;
-        }
-
-        // Cache the verification to avoid slow DNS lookups on every request
-        return cache()->remember("bot_verified.$ip", 3600, function () use ($ip, $agent) {
-            $hostname = gethostbyaddr($ip);
-
-            if (!$hostname || $hostname === $ip) {
-                return false;
-            }
-
-            // Check against trusted domains based on User-Agent
-            // This config should be added to location.php
-            $trusted = $this->config->get('location.bots.trusted_domains', [
-                'googlebot' => ['.googlebot.com', '.google.com'],
-                'bingbot' => ['.search.msn.com'],
-                'slurp' => ['.crawl.yahoo.net'],
-                'duckduckbot' => ['.duckduckgo.com'],
-                'yandexbot' => ['.yandex.com', '.yandex.ru', '.yandex.net'],
-                'baiduspider' => ['.baidu.com', '.baidu.jp'],
-            ]);
-
-            foreach ($trusted as $botKey => $domains) {
-                if (str_contains($agent, $botKey)) {
-                    foreach ($domains as $domain) {
-                        if (str_ends_with($hostname, $domain)) {
-                            // Double check: forward DNS
-                            // This prevents "fake-google.com" pointing to a malicious IP,
-                            // though strictly checking endswith .googlebot.com is usually safe-ish
-                            // if the top-level domain is controlled.
-                            // For maximum security, resolve the hostname back to IP.
-                            $resolvedIps = gethostbynamel($hostname);
-                            if ($resolvedIps && in_array($ip, $resolvedIps)) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-
-            return false;
-        });
+        return (bool) VerifyBot::run(
+            (string) request()->ip(),
+            (string) (request()->userAgent() ?? '')
+        );
     }
 
     /**
      * Determine if caching is enabled.
-     *
-     * @return bool
      */
-    protected function cacheEnabled()
+    protected function cacheEnabled(): bool
     {
-        return $this->config->get('location.cache.enabled', false);
+        return (bool) $this->config->get('location.cache.enabled', false);
     }
 
     /**
      * Get the cache key for the given IP address.
-     *
-     * @param string $ip
-     *
-     * @return string
      */
-    protected function getCacheKey($ip)
+    protected function getCacheKey(string $ip): string
     {
-        return "location.$ip";
+        return "location.{$ip}";
     }
 
     /**
      * Get the cache duration.
-     *
-     * @return int
      */
-    protected function getCacheDuration()
+    protected function getCacheDuration(): int
     {
-        return $this->config->get('location.cache.duration', 86400);
+        $config = $this->config->get('location.cache.duration', 86400);
+
+        return is_numeric($config) ? (int) $config : 86400;
     }
 
     /**
      * Get the client IP address.
-     *
-     * @return string
      */
-    protected function getClientIP()
+    protected function getClientIP(): string
     {
-        return $this->localHostTesting()
-            ? $this->getLocalHostTestingIp()
-            : request()->ip();
+        $ip = (string) request()->ip();
+
+        if ($this->localHostTesting() && ($ip === '127.0.0.1' || $ip === '::1')) {
+            return $this->getLocalHostTestingIp();
+        }
+
+        return $ip;
     }
 
     /**
      * Determine if testing is enabled.
-     *
-     * @return bool
      */
-    protected function localHostTesting()
+    protected function localHostTesting(): bool
     {
-        return $this->config->get('location.testing.enabled', true);
+        return (bool) $this->config->get('location.testing.enabled', false);
     }
 
     /**
      * Get the testing IP address.
-     *
-     * @return string
      */
-    protected function getLocalHostTestingIp()
+    protected function getLocalHostTestingIp(): string
     {
-        return $this->config->get('location.testing.ip', '66.102.0.0');
+        $config = $this->config->get('location.testing.ip', '66.102.0.0');
+
+        return is_string($config) ? $config : '66.102.0.0';
     }
 
     /**
      * Get the fallback location drivers to use.
      *
-     * @return array
+     * @return array<int, string>
      */
-    protected function getDriverFallbacks()
+    protected function getDriverFallbacks(): array
     {
-        return $this->config->get('location.fallbacks', []);
+        $fallbacks = $this->config->get('location.fallbacks');
+
+        return is_array($fallbacks) ? $fallbacks : [];
     }
 
     /**
      * Get the default location driver.
-     *
-     * @return string
      */
-    protected function getDefaultDriver()
+    protected function getDefaultDriver(): string
     {
-        return $this->config->get('location.driver');
+        $config = $this->config->get('location.driver');
+
+        return is_string($config) ? $config : '';
+    }
+
+    /**
+     * Determine if the user is in the given country.
+     */
+    public function inCountry(string $code): bool
+    {
+        $position = $this->get();
+
+        return $position instanceof Position && $position->countryCode === $code;
     }
 
     /**
      * Attempt to create the location driver.
      *
-     * @param string $driver
-     *
-     * @return Driver
-     *
      * @throws DriverDoesNotExistException
      */
-    protected function getDriver($driver)
+    protected function getDriver(string $driver): Driver
     {
         if (! class_exists($driver)) {
             throw DriverDoesNotExistException::forDriver($driver);
         }
 
-        return app()->make($driver);
+        /** @var Driver $instance */
+        $instance = app()->make($driver);
+
+        return $instance;
     }
 }
 

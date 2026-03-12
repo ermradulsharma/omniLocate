@@ -2,10 +2,10 @@
 
 namespace Skywalker\Location\Rules;
 
-use Skywalker\Support\Validation\Rule;
+use Illuminate\Contracts\Validation\Rule;
 use Skywalker\Location\Facades\Location;
 
-class LocationRule extends Rule
+class LocationRule implements Rule
 {
     /**
      * The country name or code to validate against.
@@ -33,9 +33,11 @@ class LocationRule extends Rule
      */
     public function passes($attribute, $value)
     {
-        if ($position = Location::get($value)) {
-            return strtolower($position->countryCode) === strtolower($this->country)
-                || strtolower($position->countryName) === strtolower($this->country);
+        $position = Location::get(is_string($value) ? $value : null);
+
+        if ($position instanceof \Skywalker\Location\DataTransferObjects\Position) {
+            return strtolower((string) $position->countryCode) === strtolower((string) $this->country)
+                || strtolower((string) $position->countryName) === strtolower((string) $this->country);
         }
 
         return false;

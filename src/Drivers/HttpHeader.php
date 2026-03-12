@@ -1,18 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Skywalker\Location\Drivers;
 
 use Illuminate\Support\Fluent;
-use Skywalker\Location\Position;
+use Skywalker\Location\DataTransferObjects\Position;
 
 class HttpHeader extends Driver
 {
     /**
      * Map of headers to Position properties.
      *
-     * @var array
+     * @var array<string, string>
      */
-    protected $headersParts = [
+    protected array $headersParts = [
         'cf-ipcountry' => 'countryCode',
         'x-country-code' => 'countryCode',
         'x-region-code' => 'regionCode',
@@ -22,7 +24,7 @@ class HttpHeader extends Driver
     /**
      * {@inheritdoc}
      */
-    protected function url($ip)
+    protected function url(string $ip): string
     {
         return '';
     }
@@ -30,11 +32,11 @@ class HttpHeader extends Driver
     /**
      * {@inheritdoc}
      */
-    protected function hydrate(Position $position, Fluent $location)
+    protected function hydrate(Position $position, Fluent $location): Position
     {
-        $position->countryCode = $location->countryCode;
-        $position->regionCode = $location->regionCode;
-        $position->cityName = $location->cityName;
+        $position->countryCode = $this->getString($location, 'countryCode');
+        $position->regionCode = $this->getString($location, 'regionCode');
+        $position->cityName = $this->getString($location, 'cityName');
 
         return $position;
     }
@@ -42,8 +44,9 @@ class HttpHeader extends Driver
     /**
      * {@inheritdoc}
      */
-    protected function process($ip)
+    protected function process(string $ip)
     {
+        /** @var array<string, mixed> $data */
         $data = [];
 
         foreach ($this->headersParts as $header => $property) {
@@ -52,7 +55,11 @@ class HttpHeader extends Driver
             }
         }
 
-        return count($data) > 0 ? new Fluent($data) : false;
+        if (count($data) === 0) {
+            return false;
+        }
+
+        return new Fluent($data);
     }
 }
 

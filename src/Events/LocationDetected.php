@@ -2,7 +2,7 @@
 
 namespace Skywalker\Location\Events;
 
-use Skywalker\Location\Position;
+use Skywalker\Location\DataTransferObjects\Position;
 
 class LocationDetected
 {

@@ -1,17 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Skywalker\Location\Drivers;
 
 class IpApiPro extends IpApi
 {
     /**
-     * {@inheritDoc}
+     * {@inheritdoc}
      */
-    protected function url($ip)
+    protected function url(string $ip): string
     {
-        $key = config('location.ip_api.token');
+        $config = config('location.ip_api.token');
+        $key = is_string($config) ? $config : '';
 
-        return "https://pro.ip-api.com/json/$ip?key=$key";
+        return "https://pro.ip-api.com/json/{$ip}?key={$key}";
     }
 }
 

@@ -5,7 +5,7 @@ namespace Skywalker\Location\Tests;
 use Mockery as m;
 use Illuminate\Support\Fluent;
 use Skywalker\Location\Drivers\IpData;
-use Skywalker\Location\Position;
+use Skywalker\Location\DataTransferObjects\Position;
 use Skywalker\Location\Drivers\IpApi;
 use Skywalker\Location\Drivers\IpInfo;
 use Skywalker\Location\Drivers\Driver;
@@ -16,8 +16,9 @@ use Skywalker\Location\Exceptions\DriverDoesNotExistException;
 
 class LocationTest extends TestCase
 {
-    public function test_driver_process()
+    public function test_driver_process(): void
     {
+        /** @var Driver&m\MockInterface $driver */
         $driver = m::mock(Driver::class);
 
         Location::setDriver($driver);
@@ -27,26 +28,35 @@ class LocationTest extends TestCase
 
         $driver->makePartial();
         $driver->shouldAllowMockingProtectedMethods();
-        $driver->shouldReceive('process')->once()->andReturn(new Fluent(['foo']));
-        $driver->shouldReceive('hydrate')->once()->andReturn($position);
+        /** @var m\Expectation $expectation */
+        $expectation = $driver->shouldReceive('process');
+        $expectation->once()->andReturn(new Fluent(['foo']));
+
+        /** @var m\Expectation $expectation */
+        $expectation = $driver->shouldReceive('hydrate');
+        $expectation->once()->andReturn($position);
 
         $this->assertEquals($position, Location::get());
     }
 
-    public function test_driver_fallback()
+    public function test_driver_fallback(): void
     {
+        /** @var Driver&m\MockInterface $fallback */
         $fallback = m::mock(Driver::class)
             ->shouldAllowMockingProtectedMethods();
 
-        $fallback
-            ->shouldReceive('get')->once()->andReturn(new Position());
+        /** @var m\Expectation $expectation */
+        $expectation = $fallback->shouldReceive('get');
+        $expectation->once()->andReturn(new Position());
 
+        /** @var IpApi&m\MockInterface $driver */
         $driver = m::mock(IpApi::class)
             ->makePartial()
             ->shouldAllowMockingProtectedMethods();
 
-        $driver
-            ->shouldReceive('process')->once()->andReturn(false);
+        /** @var m\Expectation $expectation */
+        $expectation = $driver->shouldReceive('process');
+        $expectation->once()->andReturn(false);
 
         $driver->fallback($fallback);
 
@@ -55,7 +65,7 @@ class LocationTest extends TestCase
         $this->assertInstanceOf(Position::class, Location::get());
     }
 
-    public function test_driver_does_not_exist()
+    public function test_driver_does_not_exist(): void
     {
         config(['location.driver' => 'Test']);
 
@@ -64,8 +74,9 @@ class LocationTest extends TestCase
         Location::get();
     }
 
-    public function test_ip_api()
+    public function test_ip_api(): void
     {
+        /** @var IpApi&m\MockInterface $driver */
         $driver = m::mock(IpApi::class)->makePartial();
 
         $attributes = [
@@ -80,9 +91,10 @@ class LocationTest extends TestCase
             'timezone' => 'America/Toronto',
         ];
 
-        $driver
-            ->shouldAllowMockingProtectedMethods()
-            ->shouldReceive('process')->once()->andReturn(new Fluent($attributes));
+        $driver->shouldAllowMockingProtectedMethods();
+        /** @var m\Expectation $expectation */
+        $expectation = $driver->shouldReceive('process');
+        $expectation->once()->andReturn(new Fluent($attributes));
 
         Location::setDriver($driver);
 
@@ -119,8 +131,9 @@ class LocationTest extends TestCase
         ], $position->toArray());
     }
 
-    public function test_geo_plugin()
+    public function test_geo_plugin(): void
     {
+        /** @var GeoPlugin&m\MockInterface $driver */
         $driver = m::mock(GeoPlugin::class)->makePartial();
 
         $attributes = [
@@ -135,9 +148,10 @@ class LocationTest extends TestCase
             'geoplugin_timezone' => 'America/Toronto',
         ];
 
-        $driver
-            ->shouldAllowMockingProtectedMethods()
-            ->shouldReceive('process')->once()->andReturn(new Fluent($attributes));
+        $driver->shouldAllowMockingProtectedMethods();
+        /** @var m\Expectation $expectation */
+        $expectation = $driver->shouldReceive('process');
+        $expectation->once()->andReturn(new Fluent($attributes));
 
         Location::setDriver($driver);
 
@@ -174,8 +188,9 @@ class LocationTest extends TestCase
         ], $position->toArray());
     }
 
-    public function test_ip_info()
+    public function test_ip_info(): void
     {
+        /** @var IpInfo&m\MockInterface $driver */
         $driver = m::mock(IpInfo::class)->makePartial();
 
         $attributes = [
@@ -187,9 +202,10 @@ class LocationTest extends TestCase
             'timezone' => 'America/Toronto',
         ];
 
-        $driver
-            ->shouldAllowMockingProtectedMethods()
-            ->shouldReceive('process')->once()->andReturn(new Fluent($attributes));
+        $driver->shouldAllowMockingProtectedMethods();
+        /** @var m\Expectation $expectation */
+        $expectation = $driver->shouldReceive('process');
+        $expectation->once()->andReturn(new Fluent($attributes));
 
         Location::setDriver($driver);
 
@@ -226,8 +242,9 @@ class LocationTest extends TestCase
         ], $position->toArray());
     }
 
-    public function test_max_mind()
+    public function test_max_mind(): void
     {
+        /** @var MaxMind&m\MockInterface $driver */
         $driver = m::mock(MaxMind::class);
 
         $attributes = [
@@ -241,10 +258,11 @@ class LocationTest extends TestCase
             'time_zone' => 'America/Toronto'
         ];
 
-        $driver
-            ->makePartial()
-            ->shouldAllowMockingProtectedMethods()
-            ->shouldReceive('process')->once()->andReturn(new Fluent($attributes));
+        $driver->makePartial();
+        $driver->shouldAllowMockingProtectedMethods();
+        /** @var m\Expectation $expectation */
+        $expectation = $driver->shouldReceive('process');
+        $expectation->once()->andReturn(new Fluent($attributes));
 
         Location::setDriver($driver);
 
@@ -281,8 +299,9 @@ class LocationTest extends TestCase
         ], $position->toArray());
     }
 
-    public function test_ip_data()
+    public function test_ip_data(): void
     {
+        /** @var IpData&m\MockInterface $driver */
         $driver = m::mock(IpData::class);
 
         $attributes = [
@@ -297,10 +316,11 @@ class LocationTest extends TestCase
             'time_zone' => ['name' => 'America/Toronto'],
         ];
 
-        $driver
-            ->makePartial()
-            ->shouldAllowMockingProtectedMethods()
-            ->shouldReceive('process')->once()->andReturn(new Fluent($attributes));
+        $driver->makePartial();
+        $driver->shouldAllowMockingProtectedMethods();
+        /** @var m\Expectation $expectation */
+        $expectation = $driver->shouldReceive('process');
+        $expectation->once()->andReturn(new Fluent($attributes));
 
         Location::setDriver($driver);
 
@@ -337,7 +357,7 @@ class LocationTest extends TestCase
         ], $position->toArray());
     }
 
-    public function test_position_is_empty()
+    public function test_position_is_empty(): void
     {
         $position = new Position();
         $position->ip = '192.168.1.1';
