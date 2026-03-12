@@ -89,6 +89,9 @@ jobs:
           COMPOSER_PROCESS_TIMEOUT: 0
         run: |
           composer config audit.block-insecure false
+          if [ "$(php -r 'echo PHP_VERSION_ID;')" -lt 80000 ]; then
+            composer remove "laravel/pint" --dev --no-interaction --no-update
+          fi
           composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" "phpunit/phpunit:${{ matrix.phpunit }}" --no-interaction --no-update --dev
           # Retry composer update up to 3 times to handle transient network issues (like SSL timeouts)
           n=0
